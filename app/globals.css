@@ -4,23 +4,53 @@
 @source "../utils/**/*.{js,ts}";
 
 /* ============================================================
-   Global Styles — Energy Monitor Dashboard
-   Dark Mode · Full-Screen TV Layout · No Scrollbars
+   DESIGN SYSTEM — Energy Monitor Dashboard v2.0
+   Dark Premium · Glassmorphism · Full-Screen TV
    ============================================================ */
 
 :root {
-  --bg-primary:   #080c17;
-  --bg-card:      rgba(255, 255, 255, 0.04);
-  --border:       rgba(255, 255, 255, 0.07);
-  --color-l1:     #f59e0b;
-  --color-l2:     #06b6d4;
-  --color-l3:     #10b981;
-  --color-peak:   #f97316;
-  --color-offpeak:#818cf8;
-  --color-cost:   #fbbf24;
+  /* ── Backgrounds ─────────────────────────────────────────── */
+  --bg-base:      #030712;
+  --bg-surface:   #070d1a;
+  --bg-card:      #0b1120;
+  --bg-card-alt:  #0d1426;
+  --bg-hover:     rgba(255,255,255,0.025);
+
+  /* ── Borders ─────────────────────────────────────────────── */
+  --border:       rgba(255,255,255,0.065);
+  --border-light: rgba(255,255,255,0.04);
+  --border-hover: rgba(255,255,255,0.14);
+
+  /* ── Text ────────────────────────────────────────────────── */
+  --text-primary:   rgba(255,255,255,0.92);
+  --text-secondary: rgba(255,255,255,0.55);
+  --text-muted:     rgba(255,255,255,0.28);
+  --text-dim:       rgba(255,255,255,0.14);
+
+  /* ── Phase Colors ────────────────────────────────────────── */
+  --phase-l1:  #f87171;   /* Red   — L1 (R) */
+  --phase-l2:  #fbbf24;   /* Amber — L2 (S) */
+  --phase-l3:  #22d3ee;   /* Cyan  — L3 (T) */
+
+  /* ── Accent Colors (per metric card) ────────────────────── */
+  --accent-volt:  #3b82f6;  /* Blue   — Voltage */
+  --accent-amp:   #10b981;  /* Emerald— Current */
+  --accent-hz:    #f97316;  /* Orange — Frequency */
+  --accent-kwh:   #8b5cf6;  /* Violet — Energy */
+  --accent-cost:  #f43f5e;  /* Rose   — Cost */
+  --accent-conn:  #22d3ee;  /* Cyan   — Connected */
+
+  /* ── Chart ───────────────────────────────────────────────── */
+  --chart-line:   #22d3ee;
+  --chart-grid:   rgba(255,255,255,0.03);
+  --chart-text:   rgba(255,255,255,0.22);
+
+  /* ── Fonts ───────────────────────────────────────────────── */
+  --font-body: 'Inter', 'Noto Sans Thai', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
 }
 
-/* ── Reset & No-Scroll ──────────────────────────────────────── */
+/* ── Reset & Base ───────────────────────────────────────────── */
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
@@ -32,76 +62,159 @@ html {
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'kern' 1, 'liga' 1;
 }
 
 body {
   height: 100%;
   overflow: hidden;
-  background-color: var(--bg-primary);
-  color: white;
-  font-family: 'Inter', 'Noto Sans Thai', system-ui, sans-serif;
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  line-height: 1.5;
 }
 
-/* Hide ALL scrollbars */
+/* ── No Scrollbars ──────────────────────────────────────────── */
 ::-webkit-scrollbar { display: none; }
 * { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* ── Subtle Grid Background ─────────────────────────────────── */
-.bg-grid-pattern {
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
-  background-size: 48px 48px;
+/* ── Subtle Dot Grid Background ─────────────────────────────── */
+.bg-dot-grid {
+  background-color: var(--bg-base);
+  background-image: radial-gradient(rgba(255,255,255,0.04) 1px, transparent 1px);
+  background-size: 28px 28px;
 }
 
-/* ── Glow Effects ───────────────────────────────────────────── */
-.glow-amber   { text-shadow: 0 0 24px rgba(245, 158, 11, 0.65); }
-.glow-cyan    { text-shadow: 0 0 24px rgba(6, 182, 212, 0.65);  }
-.glow-emerald { text-shadow: 0 0 24px rgba(16, 185, 129, 0.65); }
-.glow-gold    { text-shadow: 0 0 32px rgba(251, 191, 36, 0.8);  }
-.glow-violet  { text-shadow: 0 0 24px rgba(129, 140, 248, 0.6); }
-
-/* ── Value Update Flash Animation ──────────────────────────── */
-@keyframes valueFlash {
-  0%   { opacity: 0.5; transform: scale(0.97); }
-  50%  { opacity: 1;   transform: scale(1.015); }
-  100% { opacity: 1;   transform: scale(1); }
+/* ── Glass Card ─────────────────────────────────────────────── */
+.glass {
+  background: rgba(11, 17, 32, 0.75);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid var(--border);
 }
 
-.flash { animation: valueFlash 0.35s ease-out; }
-
-/* ── Pulse Ring ─────────────────────────────────────────────── */
-@keyframes pulseRing {
-  0%   { box-shadow: 0 0 0 0 rgba(6, 182, 212, 0.4); }
-  70%  { box-shadow: 0 0 0 10px rgba(6, 182, 212, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(6, 182, 212, 0); }
+/* ── Metric Card ─────────────────────────────────────────────── */
+.metric-card {
+  position: relative;
+  border-radius: 16px;
+  padding: 18px 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  transition: border-color 0.3s ease, transform 0.2s ease;
 }
 
-.pulse-ring { animation: pulseRing 2s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite; }
-
-/* ── Scan Line Effect (optional TV aesthetic) ───────────────── */
-@keyframes scanLine {
-  0%   { transform: translateY(-100%); }
-  100% { transform: translateY(100vh); }
+.metric-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  border-radius: 16px 16px 0 0;
+  opacity: 0.7;
 }
 
-/* ── Number transitions ─────────────────────────────────────── */
-.tabular-nums { font-variant-numeric: tabular-nums; }
+/* Card accent top lines by type */
+.card-volt::before  { background: linear-gradient(90deg, var(--accent-volt), transparent 70%); }
+.card-amp::before   { background: linear-gradient(90deg, var(--accent-amp), transparent 70%); }
+.card-hz::before    { background: linear-gradient(90deg, var(--accent-hz), transparent 70%); }
+.card-kwh::before   { background: linear-gradient(90deg, var(--accent-kwh), transparent 70%); }
+.card-cost::before  { background: linear-gradient(90deg, var(--accent-cost), transparent 70%); }
 
-/* ── Card Glass Effect ──────────────────────────────────────── */
-.glass-card {
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+/* ── Tabular Numbers ─────────────────────────────────────────── */
+.tabular { font-variant-numeric: tabular-nums; }
+
+/* ── Animated Glow Text ──────────────────────────────────────── */
+.glow-blue    { text-shadow: 0 0 20px rgba(59,130,246,0.6); }
+.glow-emerald { text-shadow: 0 0 20px rgba(16,185,129,0.6); }
+.glow-orange  { text-shadow: 0 0 20px rgba(249,115,22,0.6); }
+.glow-violet  { text-shadow: 0 0 20px rgba(139,92,246,0.6); }
+.glow-rose    { text-shadow: 0 0 20px rgba(244,63,94,0.6); }
+.glow-cyan    { text-shadow: 0 0 20px rgba(34,211,238,0.6); }
+
+/* ── Animated Status Dot ─────────────────────────────────────── */
+@keyframes livePulse {
+  0%,100% { opacity: 1; box-shadow: 0 0 0 0 currentColor; }
+  50%     { opacity: 0.8; box-shadow: 0 0 0 6px transparent; }
 }
 
-/* ── Recharts overrides ─────────────────────────────────────── */
+.live-dot {
+  animation: livePulse 2s ease-in-out infinite;
+}
+
+/* ── Value Flash (number update) ─────────────────────────────── */
+@keyframes valueUpdate {
+  0%   { opacity: 0.4; transform: translateY(2px) scale(0.98); }
+  60%  { opacity: 1;   transform: translateY(0) scale(1.01); }
+  100% { opacity: 1;   transform: translateY(0) scale(1); }
+}
+
+.val-flash { animation: valueUpdate 0.4s cubic-bezier(0.22,1,0.36,1); }
+
+/* ── Header Accent Gradient Line ─────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.header-line {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--accent-volt) 20%,
+    var(--accent-conn) 50%,
+    var(--accent-amp) 80%,
+    transparent 100%
+  );
+  background-size: 200% auto;
+  animation: shimmer 4s linear infinite;
+  opacity: 0.6;
+}
+
+/* ── Mini Progress Bar ───────────────────────────────────────── */
+.mini-bar-track {
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255,255,255,0.05);
+  overflow: hidden;
+  margin-top: 5px;
+}
+
+.mini-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.8s cubic-bezier(0.4,0,0.2,1);
+}
+
+/* ── Sine Wave SVG Animation ─────────────────────────────────── */
+@keyframes sineFlow {
+  0%   { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: -120; }
+}
+
+.sine-path {
+  stroke-dasharray: 120;
+  animation: sineFlow 2.5s linear infinite;
+}
+
+/* ── Phase Row Hover ─────────────────────────────────────────── */
+.phase-row {
+  transition: background 0.15s ease;
+}
+
+.phase-row:hover { background: rgba(255,255,255,0.022); }
+
+/* ── Recharts Overrides ──────────────────────────────────────── */
 .recharts-default-tooltip {
-  background: #0d1424 !important;
-  border: 1px solid rgba(255,255,255,0.1) !important;
+  background: rgba(7,13,26,0.96) !important;
+  border: 1px solid rgba(34,211,238,0.2) !important;
   border-radius: 12px !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4) !important;
 }
-
 .recharts-legend-item-text {
-  color: rgba(255,255,255,0.5) !important;
+  color: var(--text-secondary) !important;
+  font-size: 11px !important;
+}
+.recharts-cartesian-axis-tick-value {
+  font-family: var(--font-mono) !important;
 }

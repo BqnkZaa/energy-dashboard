@@ -1,12 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
 
-/**
- * Header Component
- * - โลโก้คณะวิศวกรรมศาสตร์ มทร.ล้านนา ลำปาง (ฝั่งซ้าย)
- * - ชื่อระบบตรวจวัดพลังงานไฟฟ้าแบบเรียลไทม์ (กึ่งกลาง)
- * - วันที่พุทธศักราชไทย, นาฬิกา และไอคอนสัญญาณ Wi-Fi (ฝั่งขวา)
- */
 export default function Header({ connectionStatus }) {
   const [time, setTime] = useState('');
   const [date, setDate] = useState('');
@@ -14,17 +8,8 @@ export default function Header({ connectionStatus }) {
   useEffect(() => {
     const tick = () => {
       const now = new Date();
-      
-      // ฟอร์แมตเวลา HH:MM:SS
-      setTime(now.toLocaleTimeString('th-TH', {
-        hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
-      }));
-
-      // ฟอร์แมตวันที่พุทธศักราชไทย (เช่น 22 มิถุนายน 2568)
-      const thMonths = [
-        'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
-        'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
-      ];
+      setTime(now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }));
+      const thMonths = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
       setDate(`${now.getDate()} ${thMonths[now.getMonth()]} ${now.getFullYear() + 543}`);
     };
     tick();
@@ -35,79 +20,88 @@ export default function Header({ connectionStatus }) {
   const isConnected = connectionStatus === 'connected';
 
   return (
-    <header className="flex items-center justify-between px-6 h-[80px] shrink-0
-                       border-b border-white/[0.06] bg-[#02050c]/80 backdrop-blur-md
-                       relative z-10 select-none">
-      
-      {/* ─── LEFT: RMUTL Crest Logo & Faculty ─── */}
-      <div className="flex items-center gap-3">
-        {/* Simplified Golden RMUTL Emblem Icon */}
-        <div className="w-10 h-10 flex items-center justify-center shrink-0">
-          <svg className="w-8 h-10 text-amber-500 drop-shadow-[0_0_8px_rgba(245,158,11,0.3)]" viewBox="0 0 30 38" fill="currentColor">
-            {/* Outline of RMUTL crown spire logo */}
-            <path d="M15 2 C13 7, 7 13, 7 19 C7 25, 11 29, 15 32 C19 29, 23 25, 23 19 C23 13, 17 7, 15 2 Z" className="opacity-20" />
-            <path d="M15 0 L11 9 L15 6 L19 9 Z" fill="#f59e0b" />
-            <path d="M15 7 C11 11, 7 15, 7 21 C7 27, 11 31, 15 34 C19 31, 23 27, 23 21 C23 15, 19 11, 15 7 Z" fill="url(#crestGrad)" />
-            <defs>
-              <linearGradient id="crestGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#f97316" />
-                <stop offset="100%" stopColor="#ea580c" />
-              </linearGradient>
-            </defs>
-            {/* Lotus/Wheel outline inside */}
-            <circle cx="15" cy="21" r="5" fill="none" stroke="#fef08a" strokeWidth="1.5" />
-            <path d="M15 16 L15 26 M10 21 L20 21" stroke="#fef08a" strokeWidth="1.2" />
-          </svg>
+    <header className="relative shrink-0 select-none" style={{ height: '72px', background: 'rgba(5,8,15,0.97)', borderBottom: '1px solid rgba(255,255,255,0.055)' }}>
+      {/* Shimmer accent line at bottom */}
+      <div className="absolute bottom-0 left-0 right-0 header-line" />
+
+      <div className="h-full flex items-center justify-between px-6">
+
+        {/* LEFT: Logo + Faculty */}
+        <div className="flex items-center gap-3.5 min-w-0">
+          {/* RMUTL Golden Emblem */}
+          <div className="relative w-10 h-10 shrink-0">
+            <svg viewBox="0 0 40 48" fill="none" className="w-10 h-12" style={{ filter: 'drop-shadow(0 0 8px rgba(251,191,36,0.3))' }}>
+              <defs>
+                <linearGradient id="emblemGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#fde68a" />
+                  <stop offset="100%" stopColor="#d97706" />
+                </linearGradient>
+              </defs>
+              {/* Crown spire */}
+              <path d="M20 2 L15 14 L20 10 L25 14 Z" fill="#fde68a" />
+              {/* Body */}
+              <path d="M20 9 C13 15, 9 21, 9 28 C9 36, 14 41, 20 44 C26 41, 31 36, 31 28 C31 21, 27 15, 20 9 Z" fill="url(#emblemGrad)" opacity="0.9" />
+              {/* Inner circle */}
+              <circle cx="20" cy="28" r="7" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="1.5" />
+              <path d="M20 21 L20 35 M13 28 L27 28" stroke="rgba(255,255,255,0.3)" strokeWidth="1.2" />
+              {/* Decorative dots */}
+              <circle cx="20" cy="28" r="2" fill="rgba(255,255,255,0.5)" />
+            </svg>
+          </div>
+
+          <div className="flex flex-col leading-tight min-w-0">
+            <span className="text-[13px] font-bold tracking-wide" style={{ color: 'rgba(255,255,255,0.90)' }}>
+              คณะวิศวกรรมศาสตร์
+            </span>
+            <span className="text-[10px] font-medium tracking-wide truncate" style={{ color: 'rgba(255,255,255,0.38)' }}>
+              มหาวิทยาลัยเทคโนโลยีราชมงคลล้านนา ลำปาง
+            </span>
+          </div>
         </div>
 
-        <div className="flex flex-col text-left leading-tight">
-          <span className="text-[12.5px] font-black text-white tracking-wide">
-            คณะวิศวกรรมศาสตร์
-          </span>
-          <span className="text-[9.5px] text-white/50 font-medium mt-0.5">
-            มหาวิทยาลัยเทคโนโลยีราชมงคลล้านนา ลำปาง
-          </span>
+        {/* CENTER: System Title */}
+        <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center text-center pointer-events-none">
+          <h1 className="text-[17px] font-extrabold tracking-wider leading-tight" style={{ color: 'rgba(255,255,255,0.93)', letterSpacing: '0.04em' }}>
+            ระบบตรวจวัดพลังงานไฟฟ้าแบบเรียลไทม์
+          </h1>
+          <p className="text-[9.5px] font-bold tracking-[0.3em] uppercase mt-1.5" style={{ color: 'rgba(255,255,255,0.25)' }}>
+            Real-Time Energy Monitoring System
+          </p>
         </div>
+
+        {/* RIGHT: Date + Clock + Status */}
+        <div className="flex items-center gap-5">
+          {/* Date & Clock */}
+          <div className="flex flex-col items-end leading-none gap-1.5">
+            <span className="text-[10.5px] font-semibold" style={{ color: '#34d399' }}>
+              {date || '9 สิงหาคม 2569'}
+            </span>
+            <span className="font-mono text-[22px] font-black tabular tracking-wider" style={{ color: 'rgba(255,255,255,0.95)', letterSpacing: '0.06em' }}>
+              {time || '20:58:31'}
+            </span>
+          </div>
+
+          {/* Divider */}
+          <div style={{ width: '1px', height: '36px', background: 'rgba(255,255,255,0.07)' }} />
+
+          {/* Connection status */}
+          <div className="flex flex-col items-center gap-1.5" title={isConnected ? 'Connected' : 'Disconnected'}>
+            {isConnected ? (
+              <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 live-dot" style={{ color: '#34d399', filter: 'drop-shadow(0 0 8px rgba(52,211,153,0.5))' }}>
+                <path d="M12 21a2 2 0 110-4 2 2 0 010 4zm-5.657-5.657a8 8 0 0111.314 0l-1.414 1.414a6 6 0 00-8.486 0l-1.414-1.414zm-2.828-2.828a12 12 0 0116.97 0l-1.414 1.414a10 10 0 00-14.142 0l-1.414-1.414zm-2.829-2.829a16 16 0 0122.628 0l-1.414 1.414a14 14 0 00-19.799 0l-1.414-1.414z" />
+              </svg>
+            ) : (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-6 h-6 animate-pulse" style={{ color: '#f87171', filter: 'drop-shadow(0 0 8px rgba(248,113,113,0.4))' }}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 3l18 18M10.584 10.587a2 2 0 002.828 2.83M6.343 6.343A8 8 0 0017.657 17.657M3.515 3.515A16 16 0 0020.485 20.485" />
+              </svg>
+            )}
+            <span className="text-[9px] font-bold uppercase tracking-wider" style={{ color: isConnected ? '#34d399' : '#f87171' }}>
+              {isConnected ? 'ONLINE' : 'OFFLINE'}
+            </span>
+          </div>
+        </div>
+
       </div>
-
-      {/* ─── CENTER: Real-Time Titles ─── */}
-      <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center text-center">
-        <h1 className="text-[19px] font-extrabold text-white tracking-wider leading-none">
-          ระบบตรวจวัดพลังงานไฟฟ้าแบบเรียลไทม์
-        </h1>
-        <h2 className="text-[10px] font-black text-white/30 tracking-[0.25em] uppercase mt-2">
-          Real-Time Energy Monitoring System
-        </h2>
-      </div>
-
-      {/* ─── RIGHT: Date, Monospace Clock, and Wi-Fi indicator ─── */}
-      <div className="flex items-center gap-5">
-        <div className="flex flex-col items-end leading-none">
-          {/* Green date */}
-          <span className="text-[11px] font-bold text-emerald-400 tracking-wide mb-1.5">
-            {date || '22 มิถุนายน 2568'}
-          </span>
-          {/* Digital Clock */}
-          <span className="font-mono text-[22px] font-black tracking-wider text-white">
-            {time || '14:30:25'}
-          </span>
-        </div>
-
-        {/* Vertical Divider */}
-        <div className="h-9 w-px bg-white/[0.08]" />
-
-        {/* Wi-Fi connection indicator */}
-        <div className="flex items-center justify-center" title={isConnected ? 'Connected to WebSocket' : 'Disconnected'}>
-          <svg className={`w-6 h-6 transition-colors duration-500 ${
-            isConnected
-              ? 'text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.4)]'
-              : 'text-red-500 animate-pulse drop-shadow-[0_0_8px_rgba(239,68,68,0.4)]'
-          }`} fill="currentColor" viewBox="0 0 24 24">
-            <path d="M12 21a2 2 0 110-4 2 2 0 010 4zm-5.657-5.657a8 8 0 0111.314 0l-1.414 1.414a6 6 0 00-8.486 0l-1.414-1.414zm-2.828-2.828a12 12 0 0116.97 0l-1.414 1.414a10 10 0 00-14.142 0l-1.414-1.414zm-2.829-2.829a16 16 0 0122.628 0l-1.414 1.414a14 14 0 00-19.799 0l-1.414-1.414z" />
-          </svg>
-        </div>
-      </div>
-
     </header>
   );
 }

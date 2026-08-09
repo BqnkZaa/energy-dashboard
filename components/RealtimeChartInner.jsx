@@ -1,19 +1,33 @@
 'use client';
 import {
-  ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
 } from 'recharts';
 
 function CustomTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-[#0c1322]/90 border border-white/[0.08] rounded-xl p-3 shadow-2xl
-                    text-xs backdrop-blur-md">
-      <p className="text-white/40 font-bold mb-1.5 font-mono">เวลา {label}</p>
-      <div className="flex items-center gap-2">
-        <div className="w-1.5 h-1.5 rounded-full bg-[#0ea5e9]" />
-        <span className="text-white/60">kWh สะสม:</span>
-        <span className="text-[#0ea5e9] font-black font-mono text-[13px] tabular-nums">
-          {payload[0].value?.toFixed(2)} kWh
+    <div style={{
+      background: 'rgba(7,13,26,0.96)',
+      border: '1px solid rgba(34,211,238,0.2)',
+      borderRadius: '12px',
+      padding: '10px 14px',
+      boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+      backdropFilter: 'blur(12px)',
+    }}>
+      <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px', fontFamily: 'monospace', marginBottom: '6px' }}>
+        ⏱ {label}
+      </p>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#22d3ee', boxShadow: '0 0 6px #22d3ee' }} />
+        <span style={{ color: 'rgba(255,255,255,0.55)', fontSize: '11px' }}>พลังงานสะสม:</span>
+        <span style={{ color: '#22d3ee', fontWeight: 900, fontSize: '14px', fontFamily: 'monospace' }}>
+          {payload[0].value?.toFixed(3)} kWh
         </span>
       </div>
     </div>
@@ -21,87 +35,88 @@ function CustomTooltip({ active, payload, label }) {
 }
 
 export default function RealtimeChartInner({ chartPoints }) {
-  const isEmpty = !chartPoints || chartPoints.length === 0;
-
-  if (isEmpty) {
+  if (!chartPoints || chartPoints.length === 0) {
     return (
-      <div className="w-full h-full flex flex-col items-center justify-center gap-2">
-        <div className="w-10 h-10 border-2 border-cyan-500/20 border-t-cyan-400
-                        rounded-full animate-spin" />
-        <p className="text-white/20 text-xs tracking-wider">
-          รอข้อมูลสัญญาณกราฟ...
+      <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
+        <div style={{
+          width: '36px', height: '36px', borderRadius: '50%',
+          border: '2px solid rgba(34,211,238,0.15)',
+          borderTopColor: '#22d3ee',
+          animation: 'spin 1s linear infinite',
+        }} />
+        <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px', letterSpacing: '0.15em' }}>
+          รอข้อมูลจากเซ็นเซอร์...
         </p>
       </div>
     );
   }
 
+  const interval = Math.max(0, Math.floor((chartPoints.length - 1) / 5));
+
   return (
-    <div className="w-full h-full flex flex-col gap-2">
-      {/* Title inside chart card */}
-      <div className="flex justify-between items-center mb-1 shrink-0">
-        <h3 className="text-sm font-bold text-white tracking-wide text-left">
-          กราฟการใช้พลังงานไฟฟ้า (kWh)
-        </h3>
-        <span className="text-[10px] text-white/30 font-bold font-mono">kWh</span>
+    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0, marginBottom: '4px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ width: '4px', height: '16px', borderRadius: '2px', background: 'linear-gradient(180deg,#22d3ee,#3b82f6)' }} />
+          <h3 style={{ fontSize: '12.5px', fontWeight: 700, color: 'rgba(255,255,255,0.85)', letterSpacing: '0.03em' }}>
+            กราฟการใช้พลังงานไฟฟ้า
+          </h3>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#22d3ee', boxShadow: '0 0 8px #22d3ee', display: 'inline-block' }} />
+          <span style={{ fontSize: '9.5px', fontWeight: 700, color: '#22d3ee', letterSpacing: '0.15em', textTransform: 'uppercase' }}>
+            Live
+          </span>
+        </div>
       </div>
 
-      {/* Recharts LineChart */}
-      <div className="flex-1 min-h-0">
+      {/* Chart */}
+      <div style={{ flex: 1, minHeight: 0 }}>
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart
-            data={chartPoints}
-            margin={{ top: 12, right: 12, left: -22, bottom: 0 }}
-          >
-            <CartesianGrid
-              strokeDasharray="4 4"
-              stroke="rgba(255,255,255,0.03)"
-              horizontal={true}
-              vertical={false}
-            />
+          <AreaChart data={chartPoints} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
+            <defs>
+              <linearGradient id="kwhGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%"  stopColor="#22d3ee" stopOpacity={0.25} />
+                <stop offset="85%" stopColor="#22d3ee" stopOpacity={0.02} />
+              </linearGradient>
+            </defs>
+
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" horizontal vertical={false} />
 
             <XAxis
               dataKey="time"
-              tick={{ fill: 'rgba(255,255,255,0.2)', fontSize: 10, fontFamily: 'monospace' }}
+              tick={{ fill: 'rgba(255,255,255,0.22)', fontSize: 9.5, fontFamily: 'JetBrains Mono, monospace' }}
               tickLine={false}
-              axisLine={{ stroke: 'rgba(255,255,255,0.05)' }}
-              interval={Math.max(0, Math.floor(chartPoints.length / 6) - 1)}
+              axisLine={{ stroke: 'rgba(255,255,255,0.06)' }}
+              interval={interval}
             />
-
             <YAxis
-              tick={{ fill: 'rgba(255,255,255,0.2)', fontSize: 10, fontFamily: 'monospace' }}
+              tick={{ fill: 'rgba(255,255,255,0.22)', fontSize: 9.5, fontFamily: 'JetBrains Mono, monospace' }}
               tickLine={false}
               axisLine={false}
-              tickFormatter={(v) => v.toFixed(0)}
-              width={40}
+              tickFormatter={(v) => v.toFixed(1)}
+              width={38}
             />
 
-            <Tooltip content={<CustomTooltip />} />
-
-            <Legend
-              verticalAlign="bottom"
-              height={24}
-              iconType="circle"
-              iconSize={6}
-              wrapperStyle={{ fontSize: 11, paddingTop: 4 }}
-              formatter={(value) => (
-                <span className="text-white/60 font-medium ml-1">
-                  {value}
-                </span>
-              )}
+            <Tooltip
+              content={<CustomTooltip />}
+              cursor={{ stroke: 'rgba(34,211,238,0.15)', strokeWidth: 1, strokeDasharray: '4 4' }}
             />
 
-            {/* Line representing accumulated kWh */}
-            <Line
+            <Area
               type="monotone"
               dataKey="kwh"
               name="kWh สะสม"
-              stroke="#0ea5e9"
-              strokeWidth={2}
-              dot={{ r: 2.5, fill: '#0ea5e9', strokeWidth: 0 }}
-              activeDot={{ r: 4.5, fill: '#0ea5e9', strokeWidth: 0 }}
+              stroke="#22d3ee"
+              strokeWidth={2.5}
+              fill="url(#kwhGradient)"
+              dot={false}
+              activeDot={{ r: 5, fill: '#22d3ee', stroke: 'rgba(34,211,238,0.3)', strokeWidth: 6 }}
               isAnimationActive={false}
+              style={{ filter: 'drop-shadow(0 0 6px rgba(34,211,238,0.4))' }}
             />
-          </LineChart>
+          </AreaChart>
         </ResponsiveContainer>
       </div>
     </div>
