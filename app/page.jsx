@@ -7,6 +7,7 @@ const Header        = dynamic(() => import('@/components/Header'),        { ssr:
 const MainMetrics   = dynamic(() => import('@/components/MainMetrics'),   { ssr: false });
 const PhaseTable    = dynamic(() => import('@/components/PhaseTable'),    { ssr: false });
 const RealtimeChart = dynamic(() => import('@/components/RealtimeChart'), { ssr: false });
+const SettingsPanel = dynamic(() => import('@/components/SettingsPanel'), { ssr: false });
 
 /**
  * Dashboard Page — Full-Screen TV Layout (RMUTL Lampang Mockup Match)
@@ -22,7 +23,7 @@ const RealtimeChart = dynamic(() => import('@/components/RealtimeChart'), { ssr:
  * └──────────────────────────────────────────────────────────────┘
  */
 export default function DashboardPage() {
-  const { data, status, lastUpdated, retryCount } = useWebSocket();
+  const { data, status, lastUpdated, retryCount, reconnectWithNewUrl } = useWebSocket();
 
   const lastUpdateStr = lastUpdated
     ? lastUpdated.toLocaleTimeString('th-TH', { hour12: false })
@@ -76,6 +77,10 @@ export default function DashboardPage() {
         )}
       </footer>
 
+      {/* ═══ SETTINGS PANEL (Floating Gear ⚙️ + PIN Modal) ═══ */}
+      <SettingsPanel onUrlChanged={reconnectWithNewUrl} />
+
     </div>
   );
 }
+

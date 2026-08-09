@@ -4,35 +4,49 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 // ══════════════════════════════════════════════════════════════
 //  WebSocket URL Resolution
 //  ลำดับความสำคัญ:
-//    1. window.__WS_URL__     (runtime override — Kiosk Mode)
-//    2. NEXT_PUBLIC_WS_URL    (.env.local / Vercel Environment)
-//    3. Auto-detect fallback  (ws://192.168.1.100:8000/ws)
+//    1. window.__WS_URL__       (runtime override — Kiosk Mode)
+//    2. localStorage            (ตั้งค่าจาก SettingsPanel บนหน้าเว็บ)
+//    3. NEXT_PUBLIC_WS_URL      (.env.local / Vercel Environment)
+//    4. Auto-detect fallback    (ws://192.168.1.100:8000/ws)
 //
 //  Auto-upgrade: ws:// → wss:// เมื่อหน้าโหลดผ่าน HTTPS
 //  (ป้องกัน Mixed Content เมื่อ Deploy บน Vercel/Cloud)
 // ══════════════════════════════════════════════════════════════
+const LS_KEY_URL = 'energy_ws_url';
 function resolveWsUrl() {
   if (typeof window === 'undefined') return null; // SSR — skip
 
-  // Priority 1: Runtime override
+  // Priority 1: Runtime override (Kiosk)
   if (window.__WS_URL__) return window.__WS_URL__;
 
-  // Priority 2: Environment Variable
-  const envUrl = process.env.NEXT_PUBLIC_WS_URL;
-  if (envUrl) {
-    const isHttps = window.location.protocol === 'https:';
-    if (isHttps && envUrl.startsWith('ws://')) {
-      const upgraded = envUrl.replace(/^ws:\/\//, 'wss://');
-      console.warn(
-        `[WS] ⚠️  Auto-upgraded:\n  ${envUrl}\n  → ${upgraded}\n  (HTTPS page requires WSS)`
-      );
-      return upgraded;
+  // Priority 2: localStorage (ตั้งค่าจาก SettingsPanel)
+  try {
+    const stored = localStorage.getItem(LS_KEY_URL);
+    if (stored && stored.trim()) {
+      const url = autoUpgradeWss(stored.trim());
+      console.log(`[WS] 📦 Using localStorage URL: ${url}`);
+      return url;
     }
-    return envUrl;
-  }
+  } catch (_) { /* localStorage unavailable */ }
 
-  // Priority 3: Fallback
+  // Priority 3: Environment Variable
+  const envUrl = process.env.NEXT_PUBLIC_WS_URL;
+  if (envUrl) return autoUpgradeWss(envUrl);
+
+  // Priority 4: Fallback
   return 'ws://192.168.1.100:8000/ws';
+}
+
+// Auto-upgrade ws:// → wss:// เมื่ออยู่ใน HTTPS
+function autoUpgradeWss(url) {
+  if (typeof window === 'undefined') return url;
+  const isHttps = window.location.protocol === 'https:';
+  if (isHttps && url.startsWith('ws://')) {
+    const upgraded = url.replace(/^ws:\/\//, 'wss://');
+    console.warn(`[WS] ⚠️  Auto-upgraded: ${url} → ${upgraded}`);
+    return upgraded;
+  }
+  return url;
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -62,7 +76,7 @@ function calcBackoff(attempt) {
  *  ✅ Page Visibility reconnect (กลับมาจาก background tab)
  *  ✅ SSR-safe (ไม่ access window ฝั่ง server)
  *
- * @returns {{ data, status, lastUpdated, retryCount }}
+ * @returns {{ data, status, lastUpdated, retryCount, reconnectWithNewUrl }}
  */
 export function useWebSocket() {
   const [data,        setData]        = useState(null);
@@ -75,6 +89,7 @@ export function useWebSocket() {
   const mountedRef     = useRef(true);
   const attemptRef     = useRef(0);
   const wsUrlRef       = useRef(null);  // resolved lazily on first connect
+  const connectRef     = useRef(null);   // ref to connect fn — avoids circular dep
 
   // ── Connect function ──────────────────────────────────────
   const connect = useCallback(() => {
@@ -141,6 +156,23 @@ export function useWebSocket() {
       setRetryCount(attemptRef.current);
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  connectRef.current = connect; // keep ref up-to-date
+
+  // ── Reconnect with new URL (called from SettingsPanel) ────
+  // ใช้ connectRef แทนการอ้างถึง connect ตรงๆ เพื่อหลีก circular dependency
+  const reconnectWithNewUrl = useCallback(() => {
+    clearTimeout(reconnectTimer.current);
+    if (wsRef.current) {
+      wsRef.current.onclose = null;
+      wsRef.current.close(1000, 'URL changed');
+    }
+    wsUrlRef.current = null; // force re-resolve — picks up new localStorage value
+    attemptRef.current = 0;
+    setRetryCount(0);
+    setStatus('connecting');
+    console.log('[WS] 🔄 URL changed — reconnecting...');
+    setTimeout(() => connectRef.current?.(), 300);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Mount / Unmount ───────────────────────────────────────
   useEffect(() => {
@@ -180,5 +212,5 @@ export function useWebSocket() {
     };
   }, [connect]);
 
-  return { data, status, lastUpdated, retryCount };
+  return { data, status, lastUpdated, retryCount, reconnectWithNewUrl };
 }
