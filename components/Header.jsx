@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 
 export default function Header({ connectionStatus }) {
   const [time, setTime] = useState('');
@@ -28,25 +29,17 @@ export default function Header({ connectionStatus }) {
 
         {/* LEFT: Logo + Faculty */}
         <div className="flex items-center gap-3.5 min-w-0">
-          {/* RMUTL Golden Emblem */}
-          <div className="relative w-10 h-10 shrink-0">
-            <svg viewBox="0 0 40 48" fill="none" className="w-10 h-12" style={{ filter: 'drop-shadow(0 0 8px rgba(251,191,36,0.3))' }}>
-              <defs>
-                <linearGradient id="emblemGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#fde68a" />
-                  <stop offset="100%" stopColor="#d97706" />
-                </linearGradient>
-              </defs>
-              {/* Crown spire */}
-              <path d="M20 2 L15 14 L20 10 L25 14 Z" fill="#fde68a" />
-              {/* Body */}
-              <path d="M20 9 C13 15, 9 21, 9 28 C9 36, 14 41, 20 44 C26 41, 31 36, 31 28 C31 21, 27 15, 20 9 Z" fill="url(#emblemGrad)" opacity="0.9" />
-              {/* Inner circle */}
-              <circle cx="20" cy="28" r="7" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="1.5" />
-              <path d="M20 21 L20 35 M13 28 L27 28" stroke="rgba(255,255,255,0.3)" strokeWidth="1.2" />
-              {/* Decorative dots */}
-              <circle cx="20" cy="28" r="2" fill="rgba(255,255,255,0.5)" />
-            </svg>
+          {/* Lanna University emblem */}
+          <div className="relative w-9 h-14 shrink-0 flex items-center justify-center">
+            <Image
+              src="/lanna-logo.png"
+              alt="ตราสัญลักษณ์มหาวิทยาลัยเทคโนโลยีราชมงคลล้านนา"
+              width={32}
+              height={59}
+              priority
+              className="object-contain"
+              style={{ filter: 'drop-shadow(0 0 8px rgba(251,191,36,0.25))' }}
+            />
           </div>
 
           <div className="flex flex-col leading-tight min-w-0">
