@@ -34,7 +34,9 @@ export default function MainMetrics({ data }) {
   const sum_a = l1_a + l2_a + l3_a || 0;
   const avg_hz = (l1_hz + l2_hz + l3_hz) / 3 || 0;
   const total_kwh = parseFloat(data?.total?.kwh) || parseFloat(data?.monthly_cost?.total_kwh) || 0;
-  const total_cost = parseFloat(data?.monthly_cost?.total_cost) || 0;
+  // ยอดบน Dashboard แสดงเฉพาะค่าพลังงาน + ค่า Demand
+  // Ft, ค่าบริการ และ VAT คำนวณใน Google Sheets เท่านั้น
+  const dashboard_cost = parseFloat(data?.monthly_cost?.dashboard_cost) || 0;
 
   const phaseColors = { L1: '#f87171', L2: '#fbbf24', L3: '#22d3ee' };
 
@@ -115,15 +117,15 @@ export default function MainMetrics({ data }) {
         </div>
       </div>
 
-      {/* ENERGY COST */}
+      {/* ENERGY + DEMAND COST */}
       <div className="metric-card card-cost">
         <div className="flex items-center justify-between mb-3">
-          <span className="text-[10px] font-bold uppercase tracking-[0.15em]" style={{ color: 'rgba(255,255,255,0.35)' }}>Energy Cost</span>
+          <span className="text-[10px] font-bold uppercase tracking-[0.15em]" style={{ color: 'rgba(255,255,255,0.35)' }}>Energy + Demand</span>
           <span className="text-[9px] font-black px-2 py-0.5 rounded-md border" style={{ color: '#f43f5e', borderColor: 'rgba(244,63,94,0.25)', background: 'rgba(244,63,94,0.08)' }}>฿</span>
         </div>
         <div className="flex items-baseline gap-1 mb-3">
           <span className="text-[30px] font-black tabular leading-none glow-rose" style={{ color: '#fff1f2' }}>
-            {total_cost.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {dashboard_cost.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </span>
           <span className="text-[11px] font-bold" style={{ color: 'rgba(255,255,255,0.3)' }}>บาท</span>
         </div>
@@ -133,7 +135,7 @@ export default function MainMetrics({ data }) {
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <span className="text-[9px] font-bold uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.25)' }}>ค่าไฟฟ้ารวม</span>
+          <span className="text-[9px] font-bold uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.25)' }}>ไม่รวม Ft · ค่าบริการ · VAT</span>
         </div>
       </div>
 

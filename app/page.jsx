@@ -9,7 +9,15 @@ const RealtimeChart = dynamic(() => import('@/components/RealtimeChart'), { ssr:
 const SettingsPanel = dynamic(() => import('@/components/SettingsPanel'), { ssr: false });
 
 export default function DashboardPage() {
-  const { data, status, lastUpdated, retryCount, reconnectWithNewUrl } = useWebSocket();
+  const {
+    data,
+    status,
+    lastUpdated,
+    retryCount,
+    billingSettings,
+    reconnectWithNewUrl,
+    saveBillingSettings,
+  } = useWebSocket();
 
   const lastUpdateStr = lastUpdated
     ? lastUpdated.toLocaleTimeString('th-TH', { hour12: false })
@@ -63,7 +71,11 @@ export default function DashboardPage() {
       </footer>
 
       {/* ⚙️ Settings Panel */}
-      <SettingsPanel onUrlChanged={reconnectWithNewUrl} />
+      <SettingsPanel
+        onUrlChanged={reconnectWithNewUrl}
+        billingSettings={billingSettings}
+        onBillingSettingsSave={saveBillingSettings}
+      />
 
     </div>
   );

@@ -83,6 +83,7 @@ export function useWebSocket() {
   const [status,      setStatus]      = useState('connecting');
   const [lastUpdated, setLastUpdated] = useState(null);
   const [retryCount,  setRetryCount]  = useState(0);
+  const [billingSettings, setBillingSettings] = useState(null);
 
   const wsRef          = useRef(null);
   const reconnectTimer = useRef(null);
@@ -90,6 +91,7 @@ export function useWebSocket() {
   const attemptRef     = useRef(0);
   const wsUrlRef       = useRef(null);  // resolved lazily on first connect
   const connectRef     = useRef(null);   // ref to connect fn — avoids circular dep
+  const billingSaveRef = useRef(null);
 
   // ── Connect function ──────────────────────────────────────
   const connect = useCallback(() => {
@@ -112,6 +114,7 @@ export function useWebSocket() {
         attemptRef.current = 0;
         setRetryCount(0);
         setStatus('connected');
+        ws.send(JSON.stringify({ type: 'get_billing_settings' }));
         console.log('[WS] ✅ Connected');
       };
 
@@ -122,6 +125,19 @@ export function useWebSocket() {
           if (msg.type === 'energy_update' && msg.data) {
             setData(msg.data);
             setLastUpdated(new Date());
+          }
+          if (msg.type === 'billing_settings' && msg.data) {
+            setBillingSettings(msg.data);
+            if (billingSaveRef.current) {
+              clearTimeout(billingSaveRef.current.timer);
+              billingSaveRef.current.resolve(msg.data);
+              billingSaveRef.current = null;
+            }
+          }
+          if (msg.type === 'error' && billingSaveRef.current) {
+            clearTimeout(billingSaveRef.current.timer);
+            billingSaveRef.current.reject(new Error(msg.message || 'บันทึกการตั้งค่าไม่สำเร็จ'));
+            billingSaveRef.current = null;
           }
           // msg.type === 'connected' (Welcome) — no action needed
         } catch (e) {
@@ -174,6 +190,26 @@ export function useWebSocket() {
     setTimeout(() => connectRef.current?.(), 300);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const saveBillingSettings = useCallback((settings) => new Promise((resolve, reject) => {
+    const ws = wsRef.current;
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+      reject(new Error('ยังไม่เชื่อมต่อกับ Backend'));
+      return;
+    }
+    if (billingSaveRef.current) {
+      clearTimeout(billingSaveRef.current.timer);
+      billingSaveRef.current.reject(new Error('กำลังบันทึกการตั้งค่าเดิมอยู่'));
+    }
+    const timer = setTimeout(() => {
+      if (billingSaveRef.current) {
+        billingSaveRef.current.reject(new Error('หมดเวลารอการบันทึก'));
+        billingSaveRef.current = null;
+      }
+    }, 8_000);
+    billingSaveRef.current = { resolve, reject, timer };
+    ws.send(JSON.stringify({ type: 'update_billing_settings', data: settings }));
+  }), []);
+
   // ── Mount / Unmount ───────────────────────────────────────
   useEffect(() => {
     mountedRef.current = true;
@@ -204,6 +240,11 @@ export function useWebSocket() {
       mountedRef.current = false;
       clearTimeout(initTimer);
       clearTimeout(reconnectTimer.current);
+      if (billingSaveRef.current) {
+        clearTimeout(billingSaveRef.current.timer);
+        billingSaveRef.current.reject(new Error('ยกเลิกการเชื่อมต่อ'));
+        billingSaveRef.current = null;
+      }
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       if (wsRef.current) {
         wsRef.current.onclose = null; // prevent reconnect loop on unmount
@@ -212,5 +253,13 @@ export function useWebSocket() {
     };
   }, [connect]);
 
-  return { data, status, lastUpdated, retryCount, reconnectWithNewUrl };
+  return {
+    data,
+    status,
+    lastUpdated,
+    retryCount,
+    billingSettings,
+    reconnectWithNewUrl,
+    saveBillingSettings,
+  };
 }
