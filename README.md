@@ -60,15 +60,30 @@ energy-dashboard/
 ```bash
 NEXT_PUBLIC_WS_URL=ws://192.168.1.100:8000/ws
 #                        ↑ เปลี่ยนเป็น IP จริงของ Raspberry Pi
+
+# ใช้ล็อกการแก้ WebSocket URL, ค่าไฟ และพิกัดแผนที่
+# ห้ามตั้งชื่อเป็น NEXT_PUBLIC_ADMIN_PASSWORD
+ADMIN_PASSWORD=ตั้งรหัสผ่านแอดมินของคุณ
 ```
 
-### 2. ติดตั้ง Dependencies
+เมื่อ deploy บน Vercel ให้เพิ่ม `ADMIN_PASSWORD` ใน **Settings → Environment Variables** สำหรับ Production, Preview และ Development ตามที่ต้องการ แล้ว redeploy หนึ่งครั้ง รหัสผ่านจะไม่ถูกส่งลง JavaScript ของผู้ใช้งาน
+
+### 2. ตั้งค่าพิกัดจุดติดตั้ง
+
+1. เปิด Dashboard แล้วกดปุ่ม ⚙
+2. กรอกรหัสผ่านแอดมิน
+3. กรอก Latitude และ Longitude ในส่วน **ตำแหน่งติดตั้งสำหรับแผนที่** แล้วกดบันทึก
+4. กดปุ่ม **แผนที่** บนส่วนหัว หรือเปิด `/map`
+
+พิกัดถูกเก็บใน SQLite ของ Backend และส่งผ่าน WebSocket ไปยังทุก Dashboard ที่เชื่อมต่ออยู่ จึงไม่หายเมื่อเปิดคนละเครื่อง
+
+### 3. ติดตั้ง Dependencies
 
 ```bash
 npm install
 ```
 
-### 3. รัน Development Mode (ทดสอบบน PC)
+### 4. รัน Development Mode (ทดสอบบน PC)
 
 ```bash
 npm run dev
@@ -76,7 +91,7 @@ npm run dev
 # กด F11 เพื่อ Full-Screen
 ```
 
-### 4. Build + Deploy บน Raspberry Pi
+### 5. Build + Deploy บน Raspberry Pi
 
 ```bash
 npm run build

@@ -1,8 +1,9 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 
-export default function Header({ connectionStatus }) {
+export default function Header({ connectionStatus, activePage = 'dashboard' }) {
   const [time, setTime] = useState('');
   const [date, setDate] = useState('');
 
@@ -62,8 +63,22 @@ export default function Header({ connectionStatus }) {
           </p>
         </div>
 
-        {/* RIGHT: Date + Clock + Status */}
+        {/* RIGHT: Navigation + Date + Clock + Status */}
         <div className="flex items-center gap-5">
+          <Link
+            href={activePage === 'map' ? '/' : '/map'}
+            title={activePage === 'map' ? 'กลับสู่ Dashboard' : 'ดูแผนที่ตำแหน่งติดตั้ง'}
+            className="hidden md:flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-[10px] font-bold transition-colors"
+            style={{
+              color: activePage === 'map' ? '#a78bfa' : 'rgba(255,255,255,0.48)',
+              background: activePage === 'map' ? 'rgba(167,139,250,0.11)' : 'rgba(255,255,255,0.035)',
+              border: `1px solid ${activePage === 'map' ? 'rgba(167,139,250,0.28)' : 'rgba(255,255,255,0.08)'}`,
+            }}
+          >
+            <span aria-hidden="true">{activePage === 'map' ? '▦' : '⌖'}</span>
+            {activePage === 'map' ? 'DASHBOARD' : 'แผนที่'}
+          </Link>
+
           {/* Date & Clock */}
           <div className="flex flex-col items-end leading-none gap-1.5">
             <span className="text-[10.5px] font-semibold" style={{ color: '#34d399' }}>

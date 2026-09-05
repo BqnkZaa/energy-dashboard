@@ -1,6 +1,7 @@
 'use client';
 import dynamic from 'next/dynamic';
 import { useWebSocket } from '@/hooks/useWebSocket';
+import { authenticateAdmin } from '@/utils/adminAuth';
 
 const Header        = dynamic(() => import('@/components/Header'),        { ssr: false });
 const MainMetrics   = dynamic(() => import('@/components/MainMetrics'),   { ssr: false });
@@ -27,7 +28,7 @@ export default function DashboardPage() {
     <div className="h-screen overflow-hidden flex flex-col bg-dot-grid">
 
       {/* ═══ HEADER ═══ */}
-      <Header connectionStatus={status} />
+      <Header connectionStatus={status} activePage="dashboard" />
 
       {/* ═══ MAIN CONTENT ═══ */}
       <main className="flex-1 overflow-hidden flex flex-col min-h-0" style={{ padding: '14px 20px', gap: '12px' }}>
@@ -75,6 +76,7 @@ export default function DashboardPage() {
         onUrlChanged={reconnectWithNewUrl}
         billingSettings={billingSettings}
         onBillingSettingsSave={saveBillingSettings}
+        onAdminAuthenticate={authenticateAdmin}
       />
 
     </div>
