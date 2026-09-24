@@ -1,13 +1,6 @@
-import { timingSafeEqual } from 'node:crypto';
+import { passwordsMatch } from '../../../../utils/adminPassword';
 
 export const runtime = 'nodejs';
-
-function passwordsMatch(received, expected) {
-  const receivedBuffer = Buffer.from(received, 'utf8');
-  const expectedBuffer = Buffer.from(expected, 'utf8');
-  return receivedBuffer.length === expectedBuffer.length
-    && timingSafeEqual(receivedBuffer, expectedBuffer);
-}
 
 export async function POST(request) {
   const expectedPassword = process.env.ADMIN_PASSWORD;

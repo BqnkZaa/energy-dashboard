@@ -55,11 +55,20 @@ energy-dashboard/
 
 ## 🚀 ขั้นตอนการรัน
 
-### 1. ตั้งค่า IP Raspberry Pi ใน .env.local
+### 1. ตั้งค่า WebSocket URL ส่วนกลาง
+
+สร้าง Private Vercel Blob store และเชื่อมกับ Vercel Project ของ Dashboard ระบบจะเพิ่ม `BLOB_READ_WRITE_TOKEN` ให้ใน Environment Variables โดยอัตโนมัติ จากนั้น deploy Dashboard รุ่นนี้
 
 ```bash
-NEXT_PUBLIC_WS_URL=ws://192.168.1.100:8000/ws
-#                        ↑ เปลี่ยนเป็น IP จริงของ Raspberry Pi
+npx vercel blob create-store energy-dashboard-config --access private
+```
+
+เปิด Dashboard กด ⚙ กรอกรหัสแอดมิน แล้วใส่ `wss://<tunnel-domain>/ws` หนึ่งครั้ง URL นี้จะเก็บฝั่ง Vercel และทุกเครื่องที่เปิดเว็บใหม่จะอ่านค่าเดียวกัน ไม่ต้องตั้งค่าในแต่ละเครื่อง การเปลี่ยน URL ไม่ต้อง redeploy
+
+สำหรับการรันในเครื่อง ให้ใส่ `ADMIN_PASSWORD` และ `BLOB_READ_WRITE_TOKEN` ใน `.env.local` เอง (ไฟล์นี้ไม่ส่งขึ้น Git):
+
+```bash
+BLOB_READ_WRITE_TOKEN=token_จาก_private_blob_store
 
 # ใช้ล็อกการแก้ WebSocket URL, ค่าไฟ และพิกัดแผนที่
 # ห้ามตั้งชื่อเป็น NEXT_PUBLIC_ADMIN_PASSWORD
@@ -67,6 +76,8 @@ ADMIN_PASSWORD=ตั้งรหัสผ่านแอดมินของ�
 ```
 
 เมื่อ deploy บน Vercel ให้เพิ่ม `ADMIN_PASSWORD` ใน **Settings → Environment Variables** สำหรับ Production, Preview และ Development ตามที่ต้องการ แล้ว redeploy หนึ่งครั้ง รหัสผ่านจะไม่ถูกส่งลง JavaScript ของผู้ใช้งาน
+
+`NEXT_PUBLIC_WS_URL` ใช้เป็นค่าเริ่มต้นเมื่อยังไม่มี URL ส่วนกลาง หากเครื่องเดิมเคยตั้ง URL ใน `localStorage` หน้า Settings จะนำค่ามาแสดงเพื่อให้แอดมินกดบันทึกเป็นค่ากลางครั้งแรก
 
 ### 2. ตั้งค่าพิกัดจุดติดตั้ง
 

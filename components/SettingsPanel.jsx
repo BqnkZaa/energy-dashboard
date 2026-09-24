@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { getSharedWsUrl, saveSharedWsUrl } from '../utils/sharedWsConfig';
 
 const LS_KEY_URL = 'energy_ws_url';
 const EMPTY_SETTINGS = {
@@ -60,7 +61,9 @@ export default function SettingsPanel({ onUrlChanged, billingSettings, onBilling
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [password, setPassword] = useState('');
   const [wsUrl, setWsUrl] = useState('');
+  const [savedWsUrl, setSavedWsUrl] = useState('');
   const [form, setForm] = useState(EMPTY_SETTINGS);
+  const [formReady, setFormReady] = useState(false);
   const [status, setStatus] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
@@ -68,8 +71,10 @@ export default function SettingsPanel({ onUrlChanged, billingSettings, onBilling
     setIsOpen(true);
     setIsAuthorized(false);
     setPassword('');
-    setWsUrl(localStorage.getItem(LS_KEY_URL) || '');
+    setWsUrl('');
+    setSavedWsUrl('');
     setForm(formFromSettings(billingSettings));
+    setFormReady(Boolean(billingSettings));
     setStatus('');
   }
 
@@ -92,7 +97,14 @@ export default function SettingsPanel({ onUrlChanged, billingSettings, onBilling
       if (!onAdminAuthenticate) throw new Error('ระบบยืนยันตัวตนยังไม่พร้อมใช้งาน');
       await onAdminAuthenticate(password);
       setIsAuthorized(true);
-      setPassword('');
+      try {
+        const sharedUrl = await getSharedWsUrl();
+        setSavedWsUrl(sharedUrl);
+        setWsUrl(sharedUrl || localStorage.getItem(LS_KEY_URL) || process.env.NEXT_PUBLIC_WS_URL || '');
+      } catch (error) {
+        setWsUrl(localStorage.getItem(LS_KEY_URL) || process.env.NEXT_PUBLIC_WS_URL || '');
+        setStatus(error.message);
+      }
     } catch (error) {
       setStatus(error.message || 'รหัสผ่านไม่ถูกต้อง');
     } finally {
@@ -104,8 +116,9 @@ export default function SettingsPanel({ onUrlChanged, billingSettings, onBilling
     event.preventDefault();
     setIsSaving(true);
     setStatus('');
+    let billingWasSaved = false;
     try {
-      if (billingSettings) {
+      if (billingSettings && formReady) {
         await onBillingSettingsSave?.({
           peakRate: Number(form.peakRate),
           offPeakRate: Number(form.offPeakRate),
@@ -116,16 +129,19 @@ export default function SettingsPanel({ onUrlChanged, billingSettings, onBilling
           siteLatitude: form.siteLatitude === '' ? null : Number(form.siteLatitude),
           siteLongitude: form.siteLongitude === '' ? null : Number(form.siteLongitude),
         });
+        billingWasSaved = true;
       }
 
-      const previousUrl = localStorage.getItem(LS_KEY_URL) || '';
       const trimmedUrl = wsUrl.trim();
-      if (trimmedUrl) localStorage.setItem(LS_KEY_URL, trimmedUrl);
-      else localStorage.removeItem(LS_KEY_URL);
-      if (trimmedUrl !== previousUrl) onUrlChanged?.(trimmedUrl);
-      setStatus(billingSettings ? 'บันทึกการตั้งค่าแล้ว' : 'บันทึก URL แล้ว - รอเชื่อมต่อ Backend');
+      if (trimmedUrl !== savedWsUrl) {
+        await saveSharedWsUrl(trimmedUrl, password);
+        setSavedWsUrl(trimmedUrl);
+        localStorage.removeItem(LS_KEY_URL);
+        onUrlChanged?.(trimmedUrl);
+      }
+      setStatus(billingWasSaved ? 'บันทึกการตั้งค่าแล้ว' : 'บันทึก URL ส่วนกลางแล้ว - รอเชื่อมต่อ Backend');
     } catch (error) {
-      setStatus(error.message || 'บันทึกไม่สำเร็จ');
+      setStatus(`${billingWasSaved ? 'บันทึกค่าไฟแล้ว แต่ URL ส่วนกลางยังไม่สำเร็จ: ' : ''}${error.message || 'บันทึกไม่สำเร็จ'}`);
     } finally {
       setIsSaving(false);
     }
@@ -182,13 +198,14 @@ export default function SettingsPanel({ onUrlChanged, billingSettings, onBilling
             <label>
               <span style={{ display: 'block', marginBottom: '6px', fontSize: '10px', fontWeight: 700, color: 'rgba(255,255,255,0.48)' }}>WebSocket URL</span>
               <input type="url" value={wsUrl} onChange={(event) => setWsUrl(event.target.value)} placeholder="wss://xxxx.trycloudflare.com/ws" style={{ ...inputStyle, height: '40px', fontSize: '11px' }} />
+              <span style={{ display: 'block', marginTop: '6px', fontSize: '10px', color: 'rgba(255,255,255,0.38)' }}>บันทึกครั้งเดียว ทุกเครื่องที่เปิด Dashboard จะใช้ URL นี้</span>
             </label>
           </section>
 
           <section>
             <div style={{ color: '#a78bfa', fontSize: '10px', fontWeight: 800, letterSpacing: '0.1em', marginBottom: '10px' }}>ตำแหน่งติดตั้งสำหรับแผนที่</div>
-            {!billingSettings && <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>เชื่อมต่อ Backend ก่อนจึงจะบันทึกพิกัดได้</div>}
-            {billingSettings && (
+            {!formReady && <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>เชื่อมต่อ Backend แล้วเปิด Settings อีกครั้งจึงจะบันทึกพิกัดได้</div>}
+            {formReady && (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '14px' }}>
                 <Field label="Latitude" field="siteLatitude" value={form.siteLatitude} onChange={updateField} step="0.000001" min="-90" max="90" hint="เช่น 18.296143" />
                 <Field label="Longitude" field="siteLongitude" value={form.siteLongitude} onChange={updateField} step="0.000001" min="-180" max="180" hint="เช่น 99.503111" />
@@ -198,8 +215,8 @@ export default function SettingsPanel({ onUrlChanged, billingSettings, onBilling
 
           <section>
             <div style={{ color: '#fbbf24', fontSize: '10px', fontWeight: 800, letterSpacing: '0.1em', marginBottom: '10px' }}>อัตราค่าไฟ</div>
-            {!billingSettings && <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>กำลังรอข้อมูลการตั้งค่าจาก Backend…</div>}
-            {billingSettings && (
+            {!formReady && <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>เชื่อมต่อ Backend แล้วเปิด Settings อีกครั้งเพื่อแก้อัตราค่าไฟ</div>}
+            {formReady && (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '14px' }}>
                 <Field label="Peak rate (บาท/kWh)" field="peakRate" value={form.peakRate} onChange={updateField} step="0.0001" />
                 <Field label="Off-Peak rate (บาท/kWh)" field="offPeakRate" value={form.offPeakRate} onChange={updateField} step="0.0001" />

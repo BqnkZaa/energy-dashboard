@@ -1,33 +1,31 @@
 'use client';
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { getSharedWsUrl } from '../utils/sharedWsConfig';
 
 // ══════════════════════════════════════════════════════════════
 //  WebSocket URL Resolution
 //  ลำดับความสำคัญ:
 //    1. window.__WS_URL__       (runtime override — Kiosk Mode)
-//    2. localStorage            (ตั้งค่าจาก SettingsPanel บนหน้าเว็บ)
+//    2. Vercel Blob             (ค่า URL ส่วนกลางที่แอดมินตั้งจากหน้าเว็บ)
 //    3. NEXT_PUBLIC_WS_URL      (.env.local / Vercel Environment)
-//    4. Auto-detect fallback    (ws://192.168.1.100:8000/ws)
+//    4. Fallback                (ws://192.168.1.100:8000/ws)
 //
 //  Auto-upgrade: ws:// → wss:// เมื่อหน้าโหลดผ่าน HTTPS
 //  (ป้องกัน Mixed Content เมื่อ Deploy บน Vercel/Cloud)
 // ══════════════════════════════════════════════════════════════
-const LS_KEY_URL = 'energy_ws_url';
-function resolveWsUrl() {
+async function resolveWsUrl() {
   if (typeof window === 'undefined') return null; // SSR — skip
 
   // Priority 1: Runtime override (Kiosk)
   if (window.__WS_URL__) return window.__WS_URL__;
 
-  // Priority 2: localStorage (ตั้งค่าจาก SettingsPanel)
+  // Priority 2: shared server-side configuration
   try {
-    const stored = localStorage.getItem(LS_KEY_URL);
-    if (stored && stored.trim()) {
-      const url = autoUpgradeWss(stored.trim());
-      console.log(`[WS] 📦 Using localStorage URL: ${url}`);
-      return url;
-    }
-  } catch (_) { /* localStorage unavailable */ }
+    const shared = await getSharedWsUrl();
+    if (shared) return autoUpgradeWss(shared);
+  } catch (error) {
+    console.warn('[WS] Shared URL unavailable:', error.message);
+  }
 
   // Priority 3: Environment Variable
   const envUrl = process.env.NEXT_PUBLIC_WS_URL;
@@ -97,12 +95,7 @@ export function useWebSocket() {
   const connect = useCallback(() => {
     if (!mountedRef.current) return;
 
-    // Resolve URL once (needs window to be ready)
-    if (!wsUrlRef.current) {
-      wsUrlRef.current = resolveWsUrl();
-      if (!wsUrlRef.current) return; // still SSR
-      console.log(`[WS] 🔗 Connecting to: ${wsUrlRef.current}`);
-    }
+    if (!wsUrlRef.current) return;
 
     try {
       setStatus('connecting');
@@ -154,7 +147,7 @@ export function useWebSocket() {
           `[WS] 💤 Disconnected (code=${e.code}) — ` +
           `retry #${attemptRef.current + 1} in ${(delay / 1000).toFixed(1)}s`
         );
-        reconnectTimer.current = setTimeout(connect, delay);
+        reconnectTimer.current = setTimeout(() => connectRef.current?.(), delay);
         attemptRef.current += 1;
         setRetryCount(attemptRef.current);
       };
@@ -167,28 +160,30 @@ export function useWebSocket() {
     } catch (e) {
       console.error('[WS] Failed to create WebSocket:', e);
       const delay = calcBackoff(attemptRef.current);
-      reconnectTimer.current = setTimeout(connect, delay);
+      reconnectTimer.current = setTimeout(() => connectRef.current?.(), delay);
       attemptRef.current += 1;
       setRetryCount(attemptRef.current);
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  connectRef.current = connect; // keep ref up-to-date
+  }, []);
 
   // ── Reconnect with new URL (called from SettingsPanel) ────
   // ใช้ connectRef แทนการอ้างถึง connect ตรงๆ เพื่อหลีก circular dependency
-  const reconnectWithNewUrl = useCallback(() => {
+  const reconnectWithNewUrl = useCallback((url) => {
     clearTimeout(reconnectTimer.current);
     if (wsRef.current) {
       wsRef.current.onclose = null;
       wsRef.current.close(1000, 'URL changed');
     }
-    wsUrlRef.current = null; // force re-resolve — picks up new localStorage value
+    wsUrlRef.current = url ? autoUpgradeWss(url) : null;
     attemptRef.current = 0;
     setRetryCount(0);
     setStatus('connecting');
     console.log('[WS] 🔄 URL changed — reconnecting...');
-    setTimeout(() => connectRef.current?.(), 300);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    setTimeout(async () => {
+      if (!wsUrlRef.current) wsUrlRef.current = await resolveWsUrl();
+      if (mountedRef.current) connectRef.current?.();
+    }, 300);
+  }, []);
 
   const saveBillingSettings = useCallback((settings) => new Promise((resolve, reject) => {
     const ws = wsRef.current;
@@ -213,9 +208,16 @@ export function useWebSocket() {
   // ── Mount / Unmount ───────────────────────────────────────
   useEffect(() => {
     mountedRef.current = true;
+    connectRef.current = connect;
 
     // รอ 150ms ให้ client-side render เสร็จก่อน (หลีกเลี่ยง SSR hydration issue)
-    const initTimer = setTimeout(connect, 150);
+    const initTimer = setTimeout(async () => {
+      const url = await resolveWsUrl();
+      if (!mountedRef.current || wsUrlRef.current) return;
+      wsUrlRef.current = url;
+      console.log(`[WS] 🔗 Connecting to: ${url}`);
+      connect();
+    }, 150);
 
     // ── Page Visibility API ──
     // เมื่อ user กลับมาดู tab → reconnect ทันที (ถ้าหลุดไป)
@@ -238,6 +240,7 @@ export function useWebSocket() {
 
     return () => {
       mountedRef.current = false;
+      connectRef.current = null;
       clearTimeout(initTimer);
       clearTimeout(reconnectTimer.current);
       if (billingSaveRef.current) {
