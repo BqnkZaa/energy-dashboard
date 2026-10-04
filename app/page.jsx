@@ -36,8 +36,8 @@ export default function DashboardPage() {
         {/* ROW 1: Metric Cards */}
         <MainMetrics data={data} />
 
-        {/* ROW 2: Phase Table + Chart */}
-        <div className="flex-1 min-h-0 grid gap-3" style={{ gridTemplateColumns: '5fr 7fr' }}>
+        {/* ROW 2–3: Phase Table, then Chart */}
+        <div className="flex-1 min-h-0 grid gap-3" style={{ gridTemplateColumns: 'minmax(0, 1fr)', gridTemplateRows: 'repeat(2, minmax(0, 1fr))' }}>
 
           {/* Phase Table */}
           <div className="flex flex-col min-h-0">
